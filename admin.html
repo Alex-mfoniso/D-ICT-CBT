@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Office CBT Exam - Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="admin">
+  <main class="app">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Admin Mode</p>
+        <h1 id="examTitleLabel">Microsoft Office CBT Exam</h1>
+      </div>
+      <div class="header-meta">
+        <span class="pill" id="storagePill">Local Storage</span>
+        <a class="pill pill-soft" href="index.html">Student View</a>
+      </div>
+    </header>
+
+    <section class="view hidden" id="adminGate">
+      <div class="panel auth-panel">
+        <h2>Admin Login</h2>
+        <p class="muted">Enter the admin password to manage questions and view saved scores.</p>
+        <label class="field">
+          <span>Password</span>
+          <input id="adminPasswordInput" type="password" autocomplete="current-password" />
+        </label>
+        <div class="form-actions">
+          <button class="btn primary" id="adminLoginBtn" type="button">Unlock Admin</button>
+        </div>
+        <p class="auth-error hidden" id="adminErrorText">Incorrect password.</p>
+      </div>
+    </section>
+
+    <section class="view hidden" id="adminApp">
+      <div class="topline">
+        <div>
+          <p class="eyebrow">Question Bank</p>
+          <h2>Manage questions for future exams.</h2>
+        </div>
+        <div class="admin-actions">
+          <button class="btn secondary" id="adminLogoutBtn" type="button">Logout</button>
+          <button class="btn secondary" id="restoreDefaultsBtn" type="button">Restore Default Set</button>
+          <button class="btn primary" id="saveAllBtn" type="button">Save All</button>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="score-card">
+          <span>Total Attempts</span>
+          <strong id="totalAttemptsValue">0</strong>
+        </div>
+        <div class="score-card">
+          <span>Average Score</span>
+          <strong id="averageScoreValue">0%</strong>
+        </div>
+        <div class="score-card">
+          <span>Best Score</span>
+          <strong id="bestScoreValue">0%</strong>
+        </div>
+      </div>
+
+      <section class="panel firebase-panel">
+        <div class="list-header">
+          <h3>Firebase Settings</h3>
+          <span class="pill pill-soft" id="firebaseStatusPill">Not Saved</span>
+        </div>
+        <div class="firebase-grid">
+          <label class="field">
+            <span>API Key</span>
+            <input id="firebaseApiKeyInput" type="text" />
+          </label>
+          <label class="field">
+            <span>Auth Domain</span>
+            <input id="firebaseAuthDomainInput" type="text" />
+          </label>
+          <label class="field">
+            <span>Project ID</span>
+            <input id="firebaseProjectIdInput" type="text" />
+          </label>
+          <label class="field">
+            <span>Storage Bucket</span>
+            <input id="firebaseStorageBucketInput" type="text" />
+          </label>
+          <label class="field">
+            <span>Messaging Sender ID</span>
+            <input id="firebaseMessagingSenderIdInput" type="text" />
+          </label>
+          <label class="field">
+            <span>App ID</span>
+            <input id="firebaseAppIdInput" type="text" />
+          </label>
+          <label class="field">
+            <span>Measurement ID</span>
+            <input id="firebaseMeasurementIdInput" type="text" />
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="btn primary" id="saveFirebaseBtn" type="button">Save Firebase Config</button>
+          <button class="btn secondary" id="loadFirebaseBtn" type="button">Reload Saved Config</button>
+          <button class="btn secondary" id="clearFirebaseBtn" type="button">Clear Saved Config</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="list-header">
+          <h3>Student Accounts</h3>
+          <span class="pill pill-soft" id="studentUserCountPill">0 Students</span>
+        </div>
+        <div class="student-grid">
+          <section class="panel nested-panel">
+            <h3 id="studentFormHeading">Add Student</h3>
+            <label class="field">
+              <span>Username</span>
+              <input id="studentUserUsernameInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Display Name</span>
+              <input id="studentUserDisplayNameInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Password</span>
+              <input id="studentUserPasswordInput" type="password" />
+            </label>
+            <label class="field checkbox-field">
+              <input id="studentUserActiveInput" type="checkbox" checked />
+              <span>Active</span>
+            </label>
+            <div class="form-actions">
+              <button class="btn primary" id="saveStudentUserBtn" type="button">Save Student</button>
+              <button class="btn secondary" id="resetStudentUserBtn" type="button">Reset</button>
+            </div>
+          </section>
+          <section class="panel nested-panel">
+            <h3>Registered Students</h3>
+            <div class="question-list" id="studentUserList"></div>
+          </section>
+        </div>
+      </section>
+
+      <div class="admin-grid">
+        <section class="panel form-panel">
+          <h3 id="formHeading">Add Question</h3>
+          <label class="field">
+            <span>Exam Title</span>
+            <input id="examTitleInput" type="text" />
+          </label>
+
+          <label class="field">
+            <span>Topic</span>
+            <input id="topicInput" type="text" placeholder="Word, Excel, Outlook..." />
+          </label>
+
+          <label class="field">
+            <span>Question</span>
+            <textarea id="questionInput" rows="4" placeholder="Type the question here"></textarea>
+          </label>
+
+          <div class="option-grid">
+            <label class="field">
+              <span>Option A</span>
+              <input id="optionAInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Option B</span>
+              <input id="optionBInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Option C</span>
+              <input id="optionCInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Option D</span>
+              <input id="optionDInput" type="text" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Correct Answer</span>
+            <select id="correctInput">
+              <option value="0">A</option>
+              <option value="1">B</option>
+              <option value="2">C</option>
+              <option value="3">D</option>
+            </select>
+          </label>
+
+          <div class="form-actions">
+            <button class="btn primary" id="saveQuestionBtn" type="button">Save Question</button>
+            <button class="btn secondary" id="resetFormBtn" type="button">Reset Form</button>
+          </div>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="list-header">
+            <h3>Question Bank</h3>
+            <span class="pill pill-soft" id="bankCountPill">40 Questions</span>
+          </div>
+          <div class="question-list" id="adminQuestionList"></div>
+        </section>
+      </div>
+
+      <section class="panel">
+        <div class="list-header">
+          <h3>Saved Scores</h3>
+          <span class="pill pill-soft" id="scoreCountPill">0 Attempts</span>
+        </div>
+        <div class="score-table-wrap">
+          <table class="score-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Date</th>
+                <th>Score</th>
+                <th>Percent</th>
+                <th>Remark</th>
+              </tr>
+            </thead>
+            <tbody id="scoreTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

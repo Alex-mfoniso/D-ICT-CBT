@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Office CBT Exam - Student</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="student">
+  <main class="app">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Computer Based Test</p>
+        <h1 id="examTitleLabel">Microsoft Office CBT Exam</h1>
+      </div>
+      <div class="header-meta">
+        <span class="pill" id="storagePill">Local Storage</span>
+        <span class="pill pill-soft" id="studentSessionLabel">Not logged in</span>
+        <button class="btn secondary hidden" id="studentLogoutBtn" type="button">Logout</button>
+        <a class="pill pill-soft" href="admin.html">Admin Area</a>
+      </div>
+    </header>
+
+    <section class="view" id="studentGate">
+      <div class="panel auth-panel">
+        <h2>Student Login</h2>
+        <p class="muted">Sign in with the username and password created by your teacher.</p>
+        <label class="field">
+          <span>Username</span>
+          <input id="studentLoginUsernameInput" type="text" autocomplete="username" />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="studentLoginPasswordInput" type="password" autocomplete="current-password" />
+        </label>
+        <div class="form-actions">
+          <button class="btn primary" id="studentLoginBtn" type="button">Login to Exam</button>
+        </div>
+        <p class="auth-error hidden" id="studentLoginErrorText">Invalid username or password.</p>
+      </div>
+    </section>
+
+    <section class="hidden" id="studentApp">
+      <section class="view" id="examView">
+      <div class="topline">
+        <div>
+          <p class="eyebrow">Student Mode</p>
+          <h2>Answer all questions and submit for scoring.</h2>
+        </div>
+        <div class="stats">
+          <div class="stat-box">
+            <span>Question</span>
+            <strong id="questionCounter">1 / 40</strong>
+          </div>
+          <div class="stat-box">
+            <span>Progress</span>
+            <strong id="progressText">0%</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-track" aria-hidden="true">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <article class="panel">
+        <p class="topic" id="questionTopic">Office Basics</p>
+        <h3 id="questionText"></h3>
+        <div class="options" id="options"></div>
+      </article>
+
+      <footer class="controls">
+        <button class="btn secondary" id="prevBtn" type="button">Previous</button>
+        <button class="btn ghost" id="clearBtn" type="button">Clear Answer</button>
+        <div class="controls-right">
+          <button class="btn secondary" id="nextBtn" type="button">Next</button>
+          <button class="btn primary" id="submitBtn" type="button">Submit Exam</button>
+        </div>
+      </footer>
+    </section>
+
+    <section class="view hidden" id="resultView" aria-live="polite">
+      <div class="result-header">
+        <div>
+          <p class="eyebrow">Result</p>
+          <h2>Your Score</h2>
+        </div>
+        <button class="btn secondary" id="backToExamBtn" type="button">Back to Exam</button>
+      </div>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <span>Correct Answers</span>
+          <strong id="scoreValue">0 / 40</strong>
+        </div>
+        <div class="score-card">
+          <span>Percentage</span>
+          <strong id="percentValue">0%</strong>
+        </div>
+        <div class="score-card">
+          <span>Remark</span>
+          <strong id="remarkValue">Keep practicing</strong>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Review</h3>
+        <p id="reviewText"></p>
+        <div class="review-list" id="reviewList"></div>
+      </div>
+    </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
