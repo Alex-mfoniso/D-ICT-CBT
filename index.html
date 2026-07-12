@@ -110,6 +110,17 @@
       </div>
     </section>
     </section>
+
+    <div class="modal-overlay hidden" id="submitModal" role="dialog" aria-modal="true" aria-labelledby="submitModalTitle">
+      <div class="modal-card">
+        <h3 id="submitModalTitle">Submit Exam?</h3>
+        <p>This will finalize your answers and show your score.</p>
+        <div class="modal-actions">
+          <button class="btn secondary" id="cancelSubmitBtn" type="button" data-submit-modal-action="cancel">Cancel</button>
+          <button class="btn primary" id="confirmSubmitBtn" type="button" data-submit-modal-action="confirm">Yes, Submit</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="script.js"></script>

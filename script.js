@@ -225,6 +225,9 @@ const percentValue = document.getElementById("percentValue");
 const remarkValue = document.getElementById("remarkValue");
 const reviewText = document.getElementById("reviewText");
 const reviewList = document.getElementById("reviewList");
+const submitModal = document.getElementById("submitModal");
+const cancelSubmitBtn = document.getElementById("cancelSubmitBtn");
+const confirmSubmitBtn = document.getElementById("confirmSubmitBtn");
 const examTitleInput = document.getElementById("examTitleInput");
 const topicInput = document.getElementById("topicInput");
 const questionInput = document.getElementById("questionInput");
@@ -640,13 +643,18 @@ function unlockStudent() {
   renderQuestion();
 }
 
-function logoutStudent() {
+function logoutStudent(options = {}) {
+  const { showGate = true } = options;
   clearCurrentStudent();
   if (studentLoginUsernameInput) studentLoginUsernameInput.value = "";
   if (studentLoginPasswordInput) studentLoginPasswordInput.value = "";
   if (studentLoginErrorText) studentLoginErrorText.classList.add("hidden");
   updateStudentSessionLabel();
-  showStudentGate();
+  if (showGate) {
+    showStudentGate();
+  } else if (studentLogoutBtn) {
+    studentLogoutBtn.classList.add("hidden");
+  }
 }
 
 function populateFirebaseInputs(config = firebaseConfig) {
@@ -835,7 +843,7 @@ function goNext() {
     return;
   }
 
-  finishExam();
+  confirmAndFinishExam();
 }
 
 function goPrev() {
@@ -848,6 +856,37 @@ function goPrev() {
 function clearAnswer() {
   answers[currentIndex] = null;
   renderQuestion();
+}
+
+function confirmAndFinishExam() {
+  if (!isStudentAuthenticated()) {
+    showStudentGate();
+    return;
+  }
+  openSubmitModal();
+}
+
+function openSubmitModal() {
+  if (!submitModal) {
+    finishExam();
+    return;
+  }
+
+  submitModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  cancelSubmitBtn?.focus();
+}
+
+function closeSubmitModal() {
+  if (submitModal) {
+    submitModal.classList.add("hidden");
+  }
+  document.body.classList.remove("modal-open");
+}
+
+function confirmSubmitExam() {
+  closeSubmitModal();
+  finishExam();
 }
 
 function getRemark(percent) {
@@ -1153,6 +1192,8 @@ function finishExam() {
   scoreAttempts = [scoreRecord, ...scoreAttempts].sort((a, b) => b.submittedAt - a.submittedAt);
   persistScoreAttempts(true, scoreRecord);
 
+  logoutStudent({ showGate: false });
+
   if (examView) {
     examView.classList.add("hidden");
   }
@@ -1418,10 +1459,38 @@ async function bootstrap() {
 if (prevBtn) prevBtn.addEventListener("click", goPrev);
 if (nextBtn) nextBtn.addEventListener("click", goNext);
 if (clearBtn) clearBtn.addEventListener("click", clearAnswer);
-if (submitBtn) submitBtn.addEventListener("click", finishExam);
+if (submitBtn) submitBtn.addEventListener("click", confirmAndFinishExam);
+if (cancelSubmitBtn) cancelSubmitBtn.addEventListener("click", closeSubmitModal);
+if (confirmSubmitBtn) confirmSubmitBtn.addEventListener("click", confirmSubmitExam);
+if (submitModal) {
+  submitModal.addEventListener("click", (event) => {
+    if (event.target === submitModal) {
+      closeSubmitModal();
+      return;
+    }
+
+    const action = event.target.closest("[data-submit-modal-action]")?.dataset.submitModalAction;
+    if (action === "cancel") {
+      closeSubmitModal();
+    }
+
+    if (action === "confirm") {
+      confirmSubmitExam();
+    }
+  });
+}
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && submitModal && !submitModal.classList.contains("hidden")) {
+    closeSubmitModal();
+  }
+});
 if (backToExamBtn) backToExamBtn.addEventListener("click", () => {
   if (resultView) resultView.classList.add("hidden");
-  if (examView) examView.classList.remove("hidden");
+  if (isStudentAuthenticated()) {
+    if (examView) examView.classList.remove("hidden");
+  } else {
+    showStudentGate();
+  }
 });
 if (studentLoginBtn) studentLoginBtn.addEventListener("click", unlockStudent);
 if (studentLoginUsernameInput) {
