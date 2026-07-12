@@ -21,6 +21,7 @@ const defaultFirebaseConfig = {
 
 let firebaseConfig = loadFirebaseConfig();
 let firebaseSdkPromise = null;
+let examLockActive = false;
 
 const defaultState = {
   examTitle: "Microsoft Office CBT Exam",
@@ -597,12 +598,51 @@ function isStudentAuthenticated() {
   return Boolean(getCurrentStudent());
 }
 
+function isExamSessionActive() {
+  return isStudentPage && isStudentAuthenticated();
+}
+
+function enterExamLockMode() {
+  if (!isExamSessionActive() || examLockActive) {
+    return;
+  }
+
+  examLockActive = true;
+  document.body.classList.add("exam-lock-active");
+
+  if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+function exitExamLockMode() {
+  if (!examLockActive) {
+    return;
+  }
+
+  examLockActive = false;
+  document.body.classList.remove("exam-lock-active");
+
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function enforceExamLock() {
+  if (isExamSessionActive()) {
+    enterExamLockMode();
+  } else {
+    exitExamLockMode();
+  }
+}
+
 function showStudentGate() {
   if (studentGate) studentGate.classList.remove("hidden");
   if (studentApp) studentApp.classList.add("hidden");
   if (examView) examView.classList.add("hidden");
   if (resultView) resultView.classList.add("hidden");
   if (studentLogoutBtn) studentLogoutBtn.classList.add("hidden");
+  exitExamLockMode();
 }
 
 function showStudentApp() {
@@ -610,6 +650,7 @@ function showStudentApp() {
   if (studentApp) studentApp.classList.remove("hidden");
   if (examView) examView.classList.remove("hidden");
   if (studentLogoutBtn) studentLogoutBtn.classList.remove("hidden");
+  enterExamLockMode();
 }
 
 function updateStudentSessionLabel() {
@@ -641,6 +682,7 @@ function unlockStudent() {
   updateStudentSessionLabel();
   showStudentApp();
   renderQuestion();
+  enforceExamLock();
 }
 
 function logoutStudent(options = {}) {
@@ -655,6 +697,7 @@ function logoutStudent(options = {}) {
   } else if (studentLogoutBtn) {
     studentLogoutBtn.classList.add("hidden");
   }
+  exitExamLockMode();
 }
 
 function populateFirebaseInputs(config = firebaseConfig) {
@@ -887,6 +930,49 @@ function closeSubmitModal() {
 function confirmSubmitExam() {
   closeSubmitModal();
   finishExam();
+}
+
+function handleExamLeaveAttempt() {
+  if (!isExamSessionActive()) {
+    return;
+  }
+
+  closeSubmitModal();
+  if (studentSessionLabel) {
+    studentSessionLabel.textContent = "Tab switch detected";
+  }
+  finishExam();
+}
+
+function shouldBlockExamShortcut(event) {
+  if (!isExamSessionActive()) {
+    return false;
+  }
+
+  if (submitModal && !submitModal.classList.contains("hidden") && event.key === "Escape") {
+    return false;
+  }
+
+  const key = String(event.key || "").toLowerCase();
+  const ctrlOrMeta = event.ctrlKey || event.metaKey;
+
+  if (event.key === "F12" || event.key === "PrintScreen") {
+    return true;
+  }
+
+  if (ctrlOrMeta && ["r", "w", "s", "p", "u", "l"].includes(key)) {
+    return true;
+  }
+
+  if (ctrlOrMeta && event.shiftKey && ["i", "j", "c"].includes(key)) {
+    return true;
+  }
+
+  if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+    return true;
+  }
+
+  return false;
 }
 
 function getRemark(percent) {
@@ -1536,5 +1622,43 @@ if (saveAllBtn) {
     renderQuestion();
   });
 }
+
+document.addEventListener("contextmenu", (event) => {
+  if (isExamSessionActive()) {
+    event.preventDefault();
+  }
+});
+
+["copy", "cut", "paste", "selectstart"].forEach((type) => {
+  document.addEventListener(type, (event) => {
+    if (isExamSessionActive()) {
+      event.preventDefault();
+    }
+  });
+});
+
+document.addEventListener("keydown", (event) => {
+  if (shouldBlockExamShortcut(event)) {
+    event.preventDefault();
+  }
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (isExamSessionActive() && document.hidden) {
+    handleExamLeaveAttempt();
+  }
+});
+
+window.addEventListener("blur", () => {
+  if (isExamSessionActive()) {
+    handleExamLeaveAttempt();
+  }
+});
+
+document.addEventListener("fullscreenchange", () => {
+  if (isExamSessionActive() && !document.fullscreenElement) {
+    enterExamLockMode();
+  }
+});
 
 bootstrap();
