@@ -492,6 +492,14 @@ async function loadScoresFromFirebase() {
   }
 }
 
+async function syncAllScoresToFirebase() {
+  if (!firebaseReady || !db) {
+    return;
+  }
+
+  await Promise.all(scoreAttempts.map((record) => syncScoreToFirebase(record).catch(() => {})));
+}
+
 function mergeScoreAttempts(localScores, remoteScores) {
   const byId = new Map();
   [...localScores, ...remoteScores].forEach((item) => {
@@ -1380,6 +1388,8 @@ async function bootstrap() {
     .then(async () => {
       await loadFromFirebase();
       await loadScoresFromFirebase();
+      await syncToFirebase();
+      await syncAllScoresToFirebase();
       updateTopLabels();
 
       if (isStudentPage) {
