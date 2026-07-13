@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Office CBT Exam - Questions</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="admin-questions">
+  <main class="app">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Admin Mode</p>
+        <h1 id="examTitleLabel">Microsoft Office CBT Exam</h1>
+      </div>
+      <div class="header-meta">
+        <span class="pill" id="storagePill">Local Storage</span>
+        <a class="pill pill-soft" href="admin.html">Dashboard</a>
+        <button class="btn secondary" id="adminLogoutBtn" type="button">Logout</button>
+      </div>
+    </header>
+
+    <section class="view hidden" id="adminGate">
+      <div class="panel auth-panel">
+        <h2>Admin Login</h2>
+        <p class="muted">Enter the admin password to manage questions, students, scores, and Firebase settings.</p>
+        <label class="field">
+          <span>Password</span>
+          <input id="adminPasswordInput" type="password" autocomplete="current-password" />
+        </label>
+        <div class="form-actions">
+          <button class="btn primary" id="adminLoginBtn" type="button">Unlock Admin</button>
+        </div>
+        <p class="auth-error hidden" id="adminErrorText">Incorrect password.</p>
+      </div>
+    </section>
+
+    <section class="view hidden" id="adminApp">
+      <div class="topline">
+        <div>
+          <p class="eyebrow">Question Bank</p>
+          <h2>Manage questions in one focused space.</h2>
+        </div>
+        <div class="admin-actions">
+          <button class="btn secondary" id="restoreDefaultsBtn" type="button">Restore Default Set</button>
+          <button class="btn primary" id="saveAllBtn" type="button">Save All</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <a class="tab" href="admin.html">Dashboard</a>
+        <a class="tab active" href="admin-questions.html">Questions</a>
+        <a class="tab" href="admin-students.html">Students</a>
+        <a class="tab" href="admin-scores.html">Scores</a>
+        <a class="tab" href="admin-settings.html">Firebase</a>
+      </div>
+
+      <div class="admin-grid">
+        <section class="panel form-panel">
+          <h3 id="formHeading">Add Question</h3>
+          <label class="field">
+            <span>Exam Title</span>
+            <input id="examTitleInput" type="text" />
+          </label>
+          <label class="field">
+            <span>Topic</span>
+            <input id="topicInput" type="text" placeholder="Word, Excel, Outlook..." />
+          </label>
+          <label class="field">
+            <span>Question</span>
+            <textarea id="questionInput" rows="4" placeholder="Type the question here"></textarea>
+          </label>
+          <div class="option-grid">
+            <label class="field">
+              <span>Option A</span>
+              <input id="optionAInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Option B</span>
+              <input id="optionBInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Option C</span>
+              <input id="optionCInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Option D</span>
+              <input id="optionDInput" type="text" />
+            </label>
+          </div>
+          <label class="field">
+            <span>Correct Answer</span>
+            <select id="correctInput">
+              <option value="0">A</option>
+              <option value="1">B</option>
+              <option value="2">C</option>
+              <option value="3">D</option>
+            </select>
+          </label>
+          <div class="form-actions">
+            <button class="btn primary" id="saveQuestionBtn" type="button">Save Question</button>
+            <button class="btn secondary" id="resetFormBtn" type="button">Reset Form</button>
+          </div>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="list-header">
+            <h3>Question Bank</h3>
+            <span class="pill pill-soft" id="bankCountPill">40 Questions</span>
+          </div>
+          <div class="question-list" id="adminQuestionList"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

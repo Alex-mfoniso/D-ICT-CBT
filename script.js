@@ -192,7 +192,12 @@ function writeStudentSession(value) {
 const appState = loadState();
 const pageMode = document.body?.dataset?.page || "student";
 const isStudentPage = pageMode === "student";
-const isAdminPage = pageMode === "admin";
+const isAdminPage = pageMode.startsWith("admin");
+const isAdminDashboardPage = pageMode === "admin";
+const isAdminQuestionsPage = pageMode === "admin-questions";
+const isAdminStudentsPage = pageMode === "admin-students";
+const isAdminScoresPage = pageMode === "admin-scores";
+const isAdminSettingsPage = pageMode === "admin-settings";
 let currentIndex = 0;
 let answers = Array(appState.questions.length).fill(null);
 let editingIndex = null;
@@ -864,9 +869,7 @@ function unlockAdmin() {
     setAdminUnlocked(true);
     if (adminErrorText) adminErrorText.classList.add("hidden");
     showAdminApp();
-    renderAdminList();
-    renderScoreDashboard();
-    renderStudentUserList();
+    renderCurrentAdminPage();
     return;
   }
 
@@ -1148,6 +1151,42 @@ function renderScoreDashboard() {
     row.append(student, date, score, percent, remark);
     scoreTableBody.appendChild(row);
   });
+}
+
+function renderCurrentAdminPage() {
+  if (!isAdminPage || !getIsAdminUnlocked()) {
+    return;
+  }
+
+  updateTopLabels();
+
+  if (isAdminDashboardPage) {
+    renderScoreDashboard();
+    renderStudentUserList();
+    return;
+  }
+
+  if (isAdminQuestionsPage) {
+    resetForm();
+    renderAdminList();
+    renderQuestion();
+    return;
+  }
+
+  if (isAdminStudentsPage) {
+    renderStudentUserList();
+    return;
+  }
+
+  if (isAdminScoresPage) {
+    renderScoreDashboard();
+    return;
+  }
+
+  if (isAdminSettingsPage) {
+    populateFirebaseInputs(firebaseConfig);
+    updateFirebaseStatus(readLocalFirebaseConfig() ? "Saved" : "Not Saved", firebaseReady);
+  }
 }
 
 function renderStudentUserList() {
@@ -1544,7 +1583,7 @@ function readFormQuestion() {
   return { topic, question, options, correctIndex };
 }
 
-function saveQuestion() {
+async function saveQuestion() {
   if (!isAdminPage) {
     return;
   }
@@ -1567,6 +1606,7 @@ function saveQuestion() {
     updateTopLabels();
     syncAnswersLength();
     saveState();
+    await syncAppStateToFirebase("question save");
     renderQuestion();
     renderAdminList();
     resetForm();
@@ -1598,6 +1638,7 @@ function deleteQuestion(index) {
 
   updateTopLabels();
   saveState();
+  syncAppStateToFirebase("question delete").catch(() => {});
   renderQuestion();
   renderAdminList();
 }
@@ -1619,6 +1660,7 @@ function restoreDefaults() {
   updateTopLabels();
   resetForm();
   saveState();
+  syncAppStateToFirebase("restore defaults").catch(() => {});
   renderQuestion();
   renderAdminList();
   renderStudentUserList();
@@ -1647,11 +1689,7 @@ async function bootstrap() {
   if (isAdminPage) {
     if (getIsAdminUnlocked()) {
       showAdminApp();
-      resetForm();
-      renderAdminList();
-      renderScoreDashboard();
-      renderStudentUserList();
-      populateFirebaseInputs(firebaseConfig);
+      renderCurrentAdminPage();
     } else {
       showAdminGate();
     }
@@ -1674,13 +1712,8 @@ async function bootstrap() {
       }
 
       if (isAdminPage) {
-        populateFirebaseInputs(firebaseConfig);
         updateFirebaseStatus(readLocalFirebaseConfig() ? "Saved" : "Not Saved", firebaseReady);
-        if (getIsAdminUnlocked()) {
-          renderAdminList();
-          renderScoreDashboard();
-          renderStudentUserList();
-        }
+        renderCurrentAdminPage();
       }
     })
     .catch(() => {
@@ -1773,6 +1806,7 @@ if (saveAllBtn) {
     appState.examTitle = examTitleInput?.value.trim() || defaultState.examTitle;
     updateTopLabels();
     saveState();
+    syncAppStateToFirebase("save all").catch(() => {});
     renderAdminList();
     renderScoreDashboard();
     renderStudentUserList();

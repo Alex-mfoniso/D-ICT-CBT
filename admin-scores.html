@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Office CBT Exam - Admin Dashboard</title>
+  <title>Office CBT Exam - Scores</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body data-page="admin">
+<body data-page="admin-scores">
   <main class="app">
     <header class="header">
       <div>
@@ -15,7 +15,7 @@
       </div>
       <div class="header-meta">
         <span class="pill" id="storagePill">Local Storage</span>
-        <a class="pill pill-soft" href="index.html">Student View</a>
+        <a class="pill pill-soft" href="admin.html">Dashboard</a>
         <button class="btn secondary" id="adminLogoutBtn" type="button">Logout</button>
       </div>
     </header>
@@ -38,16 +38,16 @@
     <section class="view hidden" id="adminApp">
       <div class="topline">
         <div>
-          <p class="eyebrow">Admin Dashboard</p>
-          <h2>Choose a section to manage.</h2>
+          <p class="eyebrow">Saved Scores</p>
+          <h2>Track every exam submission.</h2>
         </div>
       </div>
 
       <div class="tabs">
-        <a class="tab active" href="admin.html">Dashboard</a>
+        <a class="tab" href="admin.html">Dashboard</a>
         <a class="tab" href="admin-questions.html">Questions</a>
         <a class="tab" href="admin-students.html">Students</a>
-        <a class="tab" href="admin-scores.html">Scores</a>
+        <a class="tab active" href="admin-scores.html">Scores</a>
         <a class="tab" href="admin-settings.html">Firebase</a>
       </div>
 
@@ -66,28 +66,26 @@
         </div>
       </div>
 
-      <div class="dashboard-grid">
-        <a class="panel dashboard-link" href="admin-questions.html">
-          <p class="eyebrow">Questions</p>
-          <h3>Manage the exam bank</h3>
-          <p class="muted">Add, edit, and rearrange CBT questions without crowding the other tools.</p>
-        </a>
-        <a class="panel dashboard-link" href="admin-students.html">
-          <p class="eyebrow">Students</p>
-          <h3>Create login accounts</h3>
-          <p class="muted">Set usernames, passwords, active status, and approval for each student.</p>
-        </a>
-        <a class="panel dashboard-link" href="admin-scores.html">
-          <p class="eyebrow">Scores</p>
-          <h3>Review submissions</h3>
-          <p class="muted">See attempts, percentages, and remarks in one place.</p>
-        </a>
-        <a class="panel dashboard-link" href="admin-settings.html">
-          <p class="eyebrow">Firebase</p>
-          <h3>Manage storage</h3>
-          <p class="muted">Update the Firebase config that stores questions, accounts, and scores.</p>
-        </a>
-      </div>
+      <section class="panel">
+        <div class="list-header">
+          <h3>Saved Scores</h3>
+          <span class="pill pill-soft" id="scoreCountPill">0 Attempts</span>
+        </div>
+        <div class="score-table-wrap">
+          <table class="score-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Date</th>
+                <th>Score</th>
+                <th>Percent</th>
+                <th>Remark</th>
+              </tr>
+            </thead>
+            <tbody id="scoreTableBody"></tbody>
+          </table>
+        </div>
+      </section>
     </section>
   </main>
 

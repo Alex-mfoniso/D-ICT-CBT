@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Office CBT Exam - Students</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="admin-students">
+  <main class="app">
+    <header class="header">
+      <div>
+        <p class="eyebrow">Admin Mode</p>
+        <h1 id="examTitleLabel">Microsoft Office CBT Exam</h1>
+      </div>
+      <div class="header-meta">
+        <span class="pill" id="storagePill">Local Storage</span>
+        <a class="pill pill-soft" href="admin.html">Dashboard</a>
+        <button class="btn secondary" id="adminLogoutBtn" type="button">Logout</button>
+      </div>
+    </header>
+
+    <section class="view hidden" id="adminGate">
+      <div class="panel auth-panel">
+        <h2>Admin Login</h2>
+        <p class="muted">Enter the admin password to manage questions, students, scores, and Firebase settings.</p>
+        <label class="field">
+          <span>Password</span>
+          <input id="adminPasswordInput" type="password" autocomplete="current-password" />
+        </label>
+        <div class="form-actions">
+          <button class="btn primary" id="adminLoginBtn" type="button">Unlock Admin</button>
+        </div>
+        <p class="auth-error hidden" id="adminErrorText">Incorrect password.</p>
+      </div>
+    </section>
+
+    <section class="view hidden" id="adminApp">
+      <div class="topline">
+        <div>
+          <p class="eyebrow">Student Accounts</p>
+          <h2>Create logins and control approval status.</h2>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <a class="tab" href="admin.html">Dashboard</a>
+        <a class="tab" href="admin-questions.html">Questions</a>
+        <a class="tab active" href="admin-students.html">Students</a>
+        <a class="tab" href="admin-scores.html">Scores</a>
+        <a class="tab" href="admin-settings.html">Firebase</a>
+      </div>
+
+      <section class="panel">
+        <div class="list-header">
+          <h3>Student Accounts</h3>
+          <span class="pill pill-soft" id="studentUserCountPill">0 Students</span>
+        </div>
+        <div class="student-grid">
+          <section class="panel nested-panel">
+            <h3 id="studentFormHeading">Add Student</h3>
+            <label class="field">
+              <span>Username</span>
+              <input id="studentUserUsernameInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Display Name</span>
+              <input id="studentUserDisplayNameInput" type="text" />
+            </label>
+            <label class="field">
+              <span>Password</span>
+              <input id="studentUserPasswordInput" type="password" />
+            </label>
+            <label class="field checkbox-field">
+              <input id="studentUserActiveInput" type="checkbox" checked />
+              <span>Active</span>
+            </label>
+            <div class="form-actions">
+              <button class="btn primary" id="saveStudentUserBtn" type="button">Save Student</button>
+              <button class="btn secondary" id="resetStudentUserBtn" type="button">Reset</button>
+            </div>
+          </section>
+          <section class="panel nested-panel">
+            <h3>Registered Students</h3>
+            <div class="question-list" id="studentUserList"></div>
+          </section>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
