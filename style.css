@@ -479,6 +479,10 @@ h3 {
   overflow: hidden;
 }
 
+.modal-overlay {
+  cursor: default;
+}
+
 @media (max-width: 900px) {
   .admin-grid,
   .score-grid,

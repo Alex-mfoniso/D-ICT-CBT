@@ -22,11 +22,14 @@ const defaultFirebaseConfig = {
 let firebaseConfig = loadFirebaseConfig();
 let firebaseSdkPromise = null;
 let examLockActive = false;
+let examFullscreenSeen = false;
+let escWarningArmed = false;
+let escWarningTimer = null;
 
 const defaultState = {
   examTitle: "Microsoft Office CBT Exam",
   studentUsers: [
-    { username: "student1", displayName: "Student One", password: "1234", active: true }
+    { username: "student1", displayName: "Student One", password: "1234", active: true, approved: true }
   ],
   questions: [
     { topic: "Word", question: "What is Microsoft Word mainly used for?", options: ["Spreadsheets", "Word processing", "Presentations", "Email"], correctIndex: 1 },
@@ -229,6 +232,8 @@ const reviewList = document.getElementById("reviewList");
 const submitModal = document.getElementById("submitModal");
 const cancelSubmitBtn = document.getElementById("cancelSubmitBtn");
 const confirmSubmitBtn = document.getElementById("confirmSubmitBtn");
+const escWarningModal = document.getElementById("escWarningModal");
+const escWarningCancelBtn = document.getElementById("escWarningCancelBtn");
 const examTitleInput = document.getElementById("examTitleInput");
 const topicInput = document.getElementById("topicInput");
 const questionInput = document.getElementById("questionInput");
@@ -286,7 +291,8 @@ function cloneState(state) {
           username: item.username,
           displayName: item.displayName,
           password: item.password,
-          active: item.active !== false
+          active: item.active !== false,
+          approved: item.approved !== false
         }))
       : [],
     questions: state.questions.map((item) => ({
@@ -351,7 +357,8 @@ function normalizeStudentUser(user) {
     username,
     displayName: displayName || username,
     password,
-    active: user.active !== false
+    active: user.active !== false,
+    approved: user.approved !== false
   };
 }
 
@@ -621,6 +628,7 @@ function exitExamLockMode() {
   }
 
   examLockActive = false;
+  examFullscreenSeen = false;
   document.body.classList.remove("exam-lock-active");
 
   if (document.fullscreenElement && document.exitFullscreen) {
@@ -664,12 +672,28 @@ function updateStudentSessionLabel() {
     : "Not logged in";
 }
 
+function setStudentApproval(username, approved) {
+  const user = appState.studentUsers.find((item) => item.username === username);
+  if (!user) {
+    return;
+  }
+
+  user.approved = approved;
+}
+
 function unlockStudent() {
   const username = String(studentLoginUsernameInput?.value || "").trim();
   const password = String(studentLoginPasswordInput?.value || "").trim();
   const match = appState.studentUsers.find((user) => user.active !== false && user.username === username && user.password === password);
 
   if (!match) {
+    if (studentLoginErrorText) studentLoginErrorText.classList.remove("hidden");
+    if (studentLoginErrorText) studentLoginErrorText.textContent = "Invalid username or password.";
+    return;
+  }
+
+  if (match.approved === false) {
+    if (studentLoginErrorText) studentLoginErrorText.textContent = "Your account is waiting for admin approval.";
     if (studentLoginErrorText) studentLoginErrorText.classList.remove("hidden");
     return;
   }
@@ -686,11 +710,18 @@ function unlockStudent() {
 }
 
 function logoutStudent(options = {}) {
-  const { showGate = true } = options;
+  const { showGate = true, requireApproval = true } = options;
+  const currentUsername = getCurrentStudent()?.username || "";
+  if (requireApproval && currentUsername) {
+    setStudentApproval(currentUsername, false);
+    saveState();
+    syncToFirebase().catch(() => {});
+  }
   clearCurrentStudent();
   if (studentLoginUsernameInput) studentLoginUsernameInput.value = "";
   if (studentLoginPasswordInput) studentLoginPasswordInput.value = "";
   if (studentLoginErrorText) studentLoginErrorText.classList.add("hidden");
+  if (studentLoginErrorText) studentLoginErrorText.textContent = "Invalid username or password.";
   updateStudentSessionLabel();
   if (showGate) {
     showStudentGate();
@@ -932,6 +963,55 @@ function confirmSubmitExam() {
   finishExam();
 }
 
+function openEscWarningModal() {
+  if (!escWarningModal) {
+    return;
+  }
+
+  escWarningModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+
+function closeEscWarningModal() {
+  if (escWarningModal) {
+    escWarningModal.classList.add("hidden");
+  }
+  if (escWarningTimer) {
+    clearTimeout(escWarningTimer);
+    escWarningTimer = null;
+  }
+  escWarningArmed = false;
+  document.body.classList.remove("modal-open");
+}
+
+function armEscWarning() {
+  escWarningArmed = true;
+  openEscWarningModal();
+
+  if (escWarningTimer) {
+    clearTimeout(escWarningTimer);
+  }
+
+  escWarningTimer = setTimeout(() => {
+    escWarningArmed = false;
+    closeEscWarningModal();
+  }, 5000);
+}
+
+function handleEscKeyDuringExam() {
+  if (!isExamSessionActive()) {
+    return false;
+  }
+
+  if (!escWarningArmed) {
+    armEscWarning();
+    return true;
+  }
+
+  closeEscWarningModal();
+  return true;
+}
+
 function handleExamLeaveAttempt() {
   if (!isExamSessionActive()) {
     return;
@@ -951,6 +1031,10 @@ function shouldBlockExamShortcut(event) {
 
   if (submitModal && !submitModal.classList.contains("hidden") && event.key === "Escape") {
     return false;
+  }
+
+  if (event.key === "Escape") {
+    return handleEscKeyDuringExam();
   }
 
   const key = String(event.key || "").toLowerCase();
@@ -1066,6 +1150,13 @@ function renderStudentUserList() {
     const actions = document.createElement("div");
     actions.className = "row-actions";
 
+    const approveBtn = document.createElement("button");
+    approveBtn.type = "button";
+    approveBtn.className = user.approved === false ? "btn success" : "btn secondary";
+    approveBtn.textContent = user.approved === false ? "Approve" : "Approved";
+    approveBtn.disabled = user.approved !== false;
+    approveBtn.addEventListener("click", () => approveStudentUser(index));
+
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.className = "btn secondary";
@@ -1084,7 +1175,7 @@ function renderStudentUserList() {
     deleteBtn.textContent = "Delete";
     deleteBtn.addEventListener("click", () => deleteStudentUser(index));
 
-    actions.append(editBtn, toggleBtn, deleteBtn);
+    actions.append(approveBtn, editBtn, toggleBtn, deleteBtn);
     row.append(head, actions);
     studentUserList.appendChild(row);
   });
@@ -1124,7 +1215,9 @@ function saveStudentUser() {
     return;
   }
 
-  const previousUsername = editingStudentIndex !== null ? appState.studentUsers[editingStudentIndex]?.username : null;
+  const previousUser = editingStudentIndex !== null ? appState.studentUsers[editingStudentIndex] : null;
+  const existingIndex = appState.studentUsers.findIndex((item) => item.username === (studentUserUsernameInput?.value || "").trim());
+  const existingUser = existingIndex !== -1 ? appState.studentUsers[existingIndex] : null;
   const user = normalizeStudentUser({
     username: studentUserUsernameInput?.value || "",
     displayName: studentUserDisplayNameInput?.value || "",
@@ -1137,20 +1230,20 @@ function saveStudentUser() {
     return;
   }
 
-  const existingIndex = appState.studentUsers.findIndex((item) => item.username === user.username);
   if (existingIndex !== -1 && existingIndex !== editingStudentIndex) {
     alert("That username already exists.");
     return;
   }
 
   const targetIndex = editingStudentIndex !== null ? editingStudentIndex : existingIndex;
+  user.approved = previousUser?.approved ?? existingUser?.approved ?? true;
   if (targetIndex !== null && targetIndex !== -1) {
     appState.studentUsers[targetIndex] = user;
   } else {
     appState.studentUsers.push(user);
   }
 
-  if (previousUsername && getCurrentStudent()?.username === previousUsername) {
+  if (previousUser && getCurrentStudent()?.username === previousUser.username) {
     setCurrentStudent({
       username: user.username,
       displayName: user.displayName || user.username
@@ -1201,6 +1294,22 @@ function toggleStudentActive(index) {
   if (getCurrentStudent()?.username === user.username && user.active === false) {
     logoutStudent();
   }
+  saveState();
+  syncToFirebase().catch(() => {});
+  renderStudentUserList();
+}
+
+function approveStudentUser(index) {
+  if (!isAdminPage) {
+    return;
+  }
+
+  const user = appState.studentUsers[index];
+  if (!user) {
+    return;
+  }
+
+  user.approved = true;
   saveState();
   syncToFirebase().catch(() => {});
   renderStudentUserList();
@@ -1548,6 +1657,7 @@ if (clearBtn) clearBtn.addEventListener("click", clearAnswer);
 if (submitBtn) submitBtn.addEventListener("click", confirmAndFinishExam);
 if (cancelSubmitBtn) cancelSubmitBtn.addEventListener("click", closeSubmitModal);
 if (confirmSubmitBtn) confirmSubmitBtn.addEventListener("click", confirmSubmitExam);
+if (escWarningCancelBtn) escWarningCancelBtn.addEventListener("click", closeEscWarningModal);
 if (submitModal) {
   submitModal.addEventListener("click", (event) => {
     if (event.target === submitModal) {
@@ -1567,7 +1677,17 @@ if (submitModal) {
 }
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && submitModal && !submitModal.classList.contains("hidden")) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
     closeSubmitModal();
+    return;
+  }
+
+  if (event.key === "Escape" && escWarningModal && !escWarningModal.classList.contains("hidden")) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    closeEscWarningModal();
+    return;
   }
 });
 if (backToExamBtn) backToExamBtn.addEventListener("click", () => {
@@ -1638,26 +1758,41 @@ document.addEventListener("contextmenu", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (submitModal && !submitModal.classList.contains("hidden") && event.key === "Escape") {
+    event.preventDefault();
+    closeSubmitModal();
+    return;
+  }
+
   if (shouldBlockExamShortcut(event)) {
     event.preventDefault();
   }
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (isExamSessionActive() && document.hidden) {
+  if (isExamSessionActive() && examFullscreenSeen && document.hidden) {
     handleExamLeaveAttempt();
   }
 });
 
 window.addEventListener("blur", () => {
-  if (isExamSessionActive()) {
+  if (isExamSessionActive() && examFullscreenSeen) {
     handleExamLeaveAttempt();
   }
 });
 
 document.addEventListener("fullscreenchange", () => {
-  if (isExamSessionActive() && !document.fullscreenElement) {
-    enterExamLockMode();
+  if (!isExamSessionActive()) {
+    return;
+  }
+
+  if (document.fullscreenElement) {
+    examFullscreenSeen = true;
+    return;
+  }
+
+  if (examFullscreenSeen) {
+    handleExamLeaveAttempt();
   }
 });
 
