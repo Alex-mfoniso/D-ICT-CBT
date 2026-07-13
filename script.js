@@ -449,7 +449,7 @@ function loadFirebaseSdk() {
 
 async function syncToFirebase() {
   if (!firebaseReady || !db) {
-    return;
+    return false;
   }
 
   await db.collection(FIREBASE_COLLECTION).doc(FIREBASE_DOC).set({
@@ -458,6 +458,7 @@ async function syncToFirebase() {
     questions: appState.questions,
     updatedAt: Date.now()
   }, { merge: true });
+  return true;
 }
 
 async function syncScoreToFirebase(scoreRecord) {
@@ -509,6 +510,42 @@ async function syncAllScoresToFirebase() {
   }
 
   await Promise.all(scoreAttempts.map((record) => syncScoreToFirebase(record).catch(() => {})));
+}
+
+async function ensureFirebaseReady() {
+  if (firebaseReady && db) {
+    return true;
+  }
+
+  if (!hasFirebaseConfig()) {
+    return false;
+  }
+
+  try {
+    await Promise.resolve(initFirebase());
+  } catch {
+    return false;
+  }
+
+  return firebaseReady && db;
+}
+
+async function syncAppStateToFirebase(reason = "app state") {
+  const ready = await ensureFirebaseReady();
+  if (!ready) {
+    updateFirebaseStatus("Local Storage", false);
+    return false;
+  }
+
+  try {
+    await syncToFirebase();
+    updateFirebaseStatus("Firebase", true);
+    return true;
+  } catch (error) {
+    console.error(`Firebase sync failed for ${reason}:`, error);
+    updateFirebaseStatus("Sync failed", false);
+    return false;
+  }
 }
 
 function mergeScoreAttempts(localScores, remoteScores) {
@@ -1210,7 +1247,7 @@ function resetStudentForm() {
   if (studentUserActiveInput) studentUserActiveInput.checked = true;
 }
 
-function saveStudentUser() {
+async function saveStudentUser() {
   if (!isAdminPage) {
     return;
   }
@@ -1253,12 +1290,12 @@ function saveStudentUser() {
 
   updateTopLabels();
   saveState();
-  syncToFirebase().catch(() => {});
+  await syncAppStateToFirebase("student save");
   renderStudentUserList();
   resetStudentForm();
 }
 
-function deleteStudentUser(index) {
+async function deleteStudentUser(index) {
   if (!isAdminPage) {
     return;
   }
@@ -1276,11 +1313,11 @@ function deleteStudentUser(index) {
   }
   updateTopLabels();
   saveState();
-  syncToFirebase().catch(() => {});
+  await syncAppStateToFirebase("student delete");
   renderStudentUserList();
 }
 
-function toggleStudentActive(index) {
+async function toggleStudentActive(index) {
   if (!isAdminPage) {
     return;
   }
@@ -1295,11 +1332,11 @@ function toggleStudentActive(index) {
     logoutStudent();
   }
   saveState();
-  syncToFirebase().catch(() => {});
+  await syncAppStateToFirebase("student active toggle");
   renderStudentUserList();
 }
 
-function approveStudentUser(index) {
+async function approveStudentUser(index) {
   if (!isAdminPage) {
     return;
   }
@@ -1311,7 +1348,7 @@ function approveStudentUser(index) {
 
   user.approved = true;
   saveState();
-  syncToFirebase().catch(() => {});
+  await syncAppStateToFirebase("student approval");
   renderStudentUserList();
 }
 
